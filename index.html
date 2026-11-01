@@ -18,6 +18,123 @@
 body { margin: 0; font: 14px system-ui, sans-serif; }
 [hidden] { display: none !important; }
 </style>
+
+<style id="modern-ui-refresh">
+:root {
+  --bg: #090e18; --surface: rgba(19, 29, 45, .88); --ink: #f2f5fb;
+  --muted: #9aa9bf; --line: rgba(157, 180, 211, .16);
+  --accent: #8b9cff; --accent-soft: rgba(117, 137, 255, .14);
+  --warn: #ffc66e; --warn-soft: rgba(255, 198, 110, .14);
+  --display: Inter, ui-sans-serif, system-ui, sans-serif;
+  --body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html { background: var(--bg); }
+body {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(92, 113, 255, .19), transparent 38%),
+    radial-gradient(ellipse at 90% 85%, rgba(42, 190, 185, .11), transparent 35%),
+    #090e18;
+  color: var(--ink); font-family: var(--body); letter-spacing: .01em;
+}
+.wrap { max-width: 760px; gap: 0; }
+.player.import {
+  padding: clamp(18px, 4vw, 30px);
+  border: 1px solid rgba(176, 194, 226, .14);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(24, 36, 56, .96), rgba(13, 21, 34, .96));
+  box-shadow: 0 24px 80px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.04);
+  gap: 18px;
+}
+h1 {
+  font-family: var(--body); font-size: 25px; font-weight: 800;
+  letter-spacing: -.045em; display: flex; align-items: center; gap: 10px;
+}
+h1::before {
+  content: ""; width: 10px; height: 10px; border-radius: 50%;
+  background: #8b9cff; box-shadow: 0 0 18px rgba(139,156,255,.85);
+}
+.player .now {
+  background: linear-gradient(120deg, rgba(105, 125, 255, .18), rgba(31, 176, 174, .08));
+  border: 1px solid rgba(160, 174, 255, .16);
+  border-radius: 20px; padding: 22px 20px; min-height: 112px; justify-content: center;
+}
+.np-title { color: #f4f6ff; font: 750 clamp(22px, 4vw, 30px)/1.2 var(--body); letter-spacing: -.035em; }
+.np-meta { color: #aebbd0; margin-top: 5px; }
+.seekrow { gap: 12px; font-size: 12px; }
+.player input[type=range] { accent-color: #9aa8ff; cursor: pointer; }
+button, .filebtn {
+  border: 1px solid rgba(153, 169, 255, .32);
+  background: linear-gradient(135deg, #8b9cff, #687df0);
+  color: #091020; border-radius: 14px; font-weight: 750;
+  box-shadow: 0 5px 16px rgba(74, 93, 215, .16);
+  transition: transform .16s ease, filter .16s ease, background .16s ease;
+}
+button:hover, .filebtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+button:active, .filebtn:active { transform: translateY(0); }
+button.ghost, .filebtn.ghostbtn {
+  background: rgba(148, 164, 197, .08); color: #dce5f5;
+  border-color: rgba(164, 183, 216, .18); box-shadow: none;
+}
+button.ghost[aria-pressed="true"], .pick .ghost[aria-pressed="true"],
+.volrow .ghost[aria-pressed="true"] {
+  background: rgba(139, 156, 255, .2); color: #cbd3ff;
+  border-color: rgba(139, 156, 255, .45);
+}
+button.danger { color: #ffb5a9; border-color: rgba(255,130,115,.35); }
+.controls { gap: 10px; }
+.controls button { border-radius: 15px; }
+.controls #bPlay {
+  background: linear-gradient(135deg, #a7b2ff, #7589ff);
+  color: #0a1020; box-shadow: 0 8px 26px rgba(105, 125, 255, .28);
+}
+.pick { gap: 9px; }
+.pick > * { border-radius: 12px; }
+.runline { color: #8f9fb7; font-size: 13px; }
+.playlist, .lists, .lyrics {
+  border-color: var(--line); scrollbar-color: #455675 transparent;
+}
+.playlist li, .lrow { border-color: var(--line); border-radius: 10px; padding-inline: 10px; }
+.playlist li.cur, .lrow.cur { background: rgba(139,156,255,.12); }
+.playlist li.cur .name, .lrow.cur .lname { color: #b8c3ff; }
+.playlist .star.on { color: #ffc66e; }
+.lrow button { border-radius: 10px; }
+.lrow input, .newlist input {
+  background: rgba(7, 13, 24, .7); border-color: var(--line); border-radius: 12px;
+}
+.sheet, .versions-box { background: rgba(3, 7, 15, .76); backdrop-filter: blur(12px); }
+.sheet-box, .versions-inner {
+  background: #121d2d; border: 1px solid rgba(166,184,218,.18);
+  border-radius: 24px 24px 0 0; box-shadow: 0 -18px 60px rgba(0,0,0,.3);
+}
+.lyrics p.on { color: #b8c3ff; }
+button:focus-visible, .filebtn:focus-within {
+  outline: 3px solid #aab5ff; outline-offset: 3px;
+}
+@media (min-width: 700px) {
+  body { overflow: auto; padding-block: 44px; }
+  .wrap { max-width: 920px; height: auto; min-height: calc(100vh - 88px); justify-content: center; }
+  .player.import { min-height: min(820px, calc(100vh - 88px)); }
+  #musicBody {
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+    grid-template-rows: auto auto auto auto auto minmax(180px, 1fr);
+    align-items: center; column-gap: 24px; row-gap: 14px;
+  }
+  #musicBody > .now, #musicBody > .seekrow, #musicBody > .controls,
+  #musicBody > .volrow, #musicBody > .pick, #musicBody > .runline { grid-column: 1; }
+  #musicBody > .playlist, #musicBody > .lists, #musicBody > .lyrics {
+    grid-column: 2; grid-row: 1 / span 6; min-height: 320px; max-height: 540px;
+    align-self: stretch; padding: 8px; border: 1px solid var(--line);
+    border-radius: 16px; background: rgba(7, 13, 24, .32);
+  }
+  #musicBody > .lyrsync { grid-column: 1 / -1; }
+  #musicBody > .versions-box, #musicBody > .sheet { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, .filebtn { transition: none; }
+  button:hover, .filebtn:hover { transform: none; }
+}
+</style>
+
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
