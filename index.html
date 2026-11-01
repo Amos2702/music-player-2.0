@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MyMusic</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MyMusic">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f151a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+:root { color-scheme: dark; background: #0f151a; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); height: 100%; }
+body { margin: 0; font: 14px system-ui, sans-serif; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Base styles; the full-screen phone layout below overrides parts of them. */
+:root {
+  --bg: #eef2f4;
+  --surface: #ffffff;
+  --ink: #1d2a33;
+  --muted: #5b6a74;
+  --line: #d5dde2;
+  --accent: #1f6f78;
+  --accent-soft: #dcecee;
+  --warn: #9a5b00;
+  --warn-soft: #fbefd9;
+  --display: "Newsreader", Georgia, "Times New Roman", serif;
+  --body: "Atkinson Hyperlegible", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12191e; --surface: #1a242b; --ink: #e6edf1; --muted: #9aaab4; --line: #2b3943;
+    --accent: #6cc3cb; --accent-soft: #1d3a3e; --warn: #f0b860; --warn-soft: #3a2c14; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12191e; --surface: #1a242b; --ink: #e6edf1; --muted: #9aaab4; --line: #2b3943;
+  --accent: #6cc3cb; --accent-soft: #1d3a3e; --warn: #f0b860; --warn-soft: #3a2c14; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body);
+  font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 7vw, 42px); line-height: 1.1; margin: 0; text-wrap: balance; }
+section { display: flex; flex-direction: column; gap: 12px; }
+.empty { color: var(--muted); margin: 0; }
+.import { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+button, .filebtn {
+  font: inherit; font-size: 16px; font-weight: 700; border-radius: 10px; padding: 10px 18px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+}
+button.ghost { background: transparent; color: var(--accent); }
+button.danger { background: transparent; color: var(--warn); border-color: var(--warn); }
+button:focus-visible, .filebtn:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+.runline { font-size: 14px; color: var(--muted); margin: 0; }
+.money { display: flex; flex-direction: column; gap: 14px; }
+.player .now { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); }
+.np-title { font-family: var(--display); font-weight: 600; font-size: 21px; color: var(--accent); overflow-wrap: anywhere; }
+.np-meta { font-size: 14px; color: var(--muted); }
+.seekrow { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.player input[type=range] { width: 100%; accent-color: var(--accent); min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.controls #bPlay { min-width: 64px; font-size: 18px; }
+.controls .ghost[aria-pressed="true"], .pick .ghost[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.vol { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); margin-left: auto; min-width: 0; }
+.vol input { width: 110px; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pick input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.filebtn.ghostbtn { background: transparent; color: var(--accent); }
+.playlist { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; border-top: 1px solid var(--line); }
+.playlist li { display: flex; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.playlist li.cur { background: var(--accent-soft); }
+.playlist .name { flex: 1; min-width: 0; overflow-wrap: anywhere; cursor: pointer; text-align: left; border: 0; background: transparent; color: inherit; padding: 4px 0; font: inherit; font-weight: inherit; }
+.playlist li.cur .name { font-weight: 700; color: var(--accent); }
+.playlist .star { font-size: 18px; padding: 0 8px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.playlist .star.on { color: var(--warn); }
+</style>
+<style>
+:root, :root[data-theme] { --bg: #0f151a; --surface: #172028; --ink: #e6edf1; --muted: #9aaab4; --line: #2b3943;
+  --accent: #6cc3cb; --accent-soft: #1d3a3e; --warn: #f0b860; --warn-soft: #3a2c14; color-scheme: dark; }
+/* Full-screen phone layout: the player fills the screen height; only the song list scrolls. */
+html, body { height: 100%; }
+body { padding-block: 10px; box-sizing: border-box; overflow: hidden; }
+.wrap { height: 100%; gap: 0; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 28px; margin: 0; }
+.player { flex: 1; min-height: 0; gap: 14px; box-sizing: border-box; }
+#musicBody { flex: 1; min-height: 0; }
+.player .now { padding: 18px 16px; }
+.np-title { font-size: 24px; }
+.controls { flex-wrap: nowrap; }
+.controls button { flex: 1; font-size: 22px; padding: 14px 0; }
+.controls #bShuffle { font-size: 15px; }
+.vol { margin-left: 0; flex: 1; }
+.volrow { display: flex; gap: 12px; align-items: center; }
+.volrow #bKaraoke, .volrow #bRepeat { font-size: 15px; padding: 8px 10px; flex: none; }
+.volrow .vol { min-width: 110px; }
+.volrow.novol .vol { display: none; }
+.volrow.novol button { flex: 1 !important; }
+.controls .ghost[aria-pressed="true"], .volrow .ghost[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.vol input { flex: 1; width: auto; }
+.pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pick > * { text-align: center; white-space: nowrap; min-width: 0; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; }
+.lists { flex: 1; min-height: 120px; overflow-y: auto; border-top: 1px solid var(--line); display: flex; flex-direction: column; }
+.lists[hidden], .sheet[hidden] { display: none; }
+.lrow { display: flex; gap: 8px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.lrow .lname { flex: 1; min-width: 0; overflow-wrap: anywhere; cursor: pointer; font-size: 16px; }
+.lrow .lname small { color: var(--muted); font-size: 13px; margin-left: 6px; }
+.lrow.cur { background: var(--accent-soft); }
+.lrow.cur .lname { color: var(--accent); font-weight: 700; }
+.lrow button { font-size: 13px; padding: 5px 10px; flex: none; }
+.lrow input, .newlist input { font: inherit; font-size: 16px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); min-width: 0; flex: 1; }
+.newlist { display: flex; gap: 8px; padding: 12px 4px; }
+.newlist button { font-size: 15px; padding: 7px 14px; }
+.lhint { color: var(--muted); font-size: 14px; padding: 8px 4px; margin: 0; }
+.playlist .add { font-size: 20px; padding: 0 10px; border: 0; background: transparent; color: var(--accent); cursor: pointer; flex: none; }
+.sheet { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet-box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); width: 100%; max-width: 480px; max-height: 75vh; overflow-y: auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
+.sheet-title { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.sheet-opts { display: flex; flex-direction: column; gap: 8px; }
+.sheet-opts button { text-align: left; font-size: 16px; }
+.sheet .newlist { padding: 0; }
+.pick .ghost { font-size: 15px; padding-inline: 8px; }
+.playlist { flex: 1; min-height: 120px; max-height: none; }
+.playlist li { padding: 12px 4px; font-size: 16px; }
+.lyrics { flex: 1; min-height: 120px; overflow-y: auto; border-top: 1px solid var(--line); padding: 12px 4px 0; font-size: 19px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+.lyrics::after { content: ""; display: block; height: 30vh; }
+.lyrsync[hidden] { display: none; }
+.lyrics p { margin: 0 0 10px; color: var(--muted); }
+.lyrics.plain p, .lyrics p.on { color: var(--ink); }
+.lyrics p.on { font-weight: 700; color: var(--accent); }
+.lyrics .empty { color: var(--muted); font-size: 16px; }
+.lyrsync { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+.lyrsync button { font-size: 15px; padding: 8px 6px; }
+.lyrsync span { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; min-width: 5.5em; }
+@media (prefers-reduced-motion: no-preference) { .lyrics p { transition: color .2s; } }
+@media (min-width: 700px) { .wrap { max-width: 480px; } }
+</style>
+
+<div class="wrap">
+  <section class="import player" aria-labelledby="h-music">
+    <h1 id="h-music">MyMusic</h1>
+    <div id="musicBody" class="money">
+      <div class="now">
+        <span class="np-title" id="npTitle">No song playing</span>
+        <span class="np-meta" id="npMeta">Choose songs from your iCloud Drive or Music folder to start.</span>
+      </div>
+      <div class="seekrow">
+        <span id="tCur">0:00</span>
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position in song">
+        <span id="tDur">0:00</span>
+      </div>
+      <div class="controls">
+        <button type="button" class="ghost" id="bPrev" aria-label="Previous song">⏮</button>
+        <button type="button" id="bPlay" aria-label="Play">▶</button>
+        <button type="button" class="ghost" id="bNext" aria-label="Next song">⏭</button>
+        <button type="button" class="ghost" id="bShuffle" aria-pressed="false">Shuffle</button>
+      </div>
+      <div class="volrow">
+        <label class="vol">Vol <input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
+        <button type="button" class="ghost" id="bRepeat" aria-pressed="true">Repeat all</button>
+        <button type="button" class="ghost" id="bKaraoke" aria-pressed="false">Karaoke</button>
+      </div>
+      <div class="pick">
+        <label class="filebtn" for="songs">Choose songs<input type="file" id="songs" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac" multiple></label>
+        <button type="button" class="ghost" id="bLists" aria-pressed="false">Playlists</button>
+        <button type="button" class="ghost" id="bFavOnly" aria-pressed="false">Favourites only</button>
+        <button type="button" class="ghost" id="bLyrics" aria-pressed="false">Lyrics</button>
+      </div>
+      <p class="runline" id="musicHint">Loading your library…</p>
+      <ol class="playlist" id="playlist"></ol>
+      <div class="lists" id="lists" hidden></div>
+      <div class="lyrics" id="lyrics" hidden aria-live="off"></div>
+      <div class="lyrsync" id="lyrSync" hidden>
+        <button type="button" class="ghost" id="bLyrEarlier">◀ Lyrics earlier</button>
+        <span id="lyrOfs" aria-live="polite">In time</span>
+        <button type="button" class="ghost" id="bLyrLater">Lyrics later ▶</button>
+      </div>
+      <audio id="audio" preload="metadata"></audio>
+      <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet-box">
+        <p class="sheet-title" id="sheetTitle"></p>
+        <div class="sheet-opts" id="sheetOpts"></div>
+        <form class="newlist" id="sheetNew"><input id="sheetName" placeholder="New playlist name" maxlength="40" aria-label="New playlist name"><button type="submit" class="ghost">Add</button></form>
+        <button type="button" class="danger" id="sheetRemove">Remove from library</button>
+        <button type="button" id="sheetDone">Done</button>
+      </div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+// Songs are copied into this app's IndexedDB storage when picked, so they load by themselves next time.
+// Favourites, playlists and settings stay in localStorage, keyed by song name.
+let music = { favourites: [], volume: 80, shuffle: false, favOnly: false, playlists: {}, active: null, repeat: "all" };
+let saveMusic = async () => { try { localStorage.setItem("music", JSON.stringify(music)); } catch (e) {} };
+let songs = [], order = [], pos = -1;
+let audio = $("audio"); // replaced by a fresh element when Karaoke is switched off (see resetAudio)
+const songName = f => f.name.replace(/\.[^.]+$/, "");
+const fmtClock = s => !isFinite(s) ? "0:00" : Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+const isFav = s => music.favourites.includes(s.name);
+// Named playlists hold song names only; the active one filters the songs picked this visit.
+const inActive = s => !music.active || (music.playlists[music.active] || []).includes(s.name);
+let listsOpen = false;
+// Song library: one IndexedDB record per song { id: "file name|size", name, size, blob, added }.
+// Store "lyrics" caches lyrics found online, keyed by song name (moved out of localStorage, which fills up at ~5 MB).
+let storageOK = "indexedDB" in window;
+const DB = new Promise((res, rej) => {
+  if (!storageOK) return rej(new Error("no IndexedDB"));
+  const r = indexedDB.open("mymusic", 2);
+  r.onupgradeneeded = () => {
+    const db = r.result;
+    if (!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", { keyPath: "id" });
+    if (!db.objectStoreNames.contains("lyrics")) db.createObjectStore("lyrics");
+  };
+  r.onsuccess = () => { r.result.onversionchange = () => r.result.close(); res(r.result); };
+  r.onerror = () => rej(r.error);
+});
+function idb(mode, fn, store = "songs") {
+  return DB.then(db => new Promise((res, rej) => {
+    const tx = db.transaction(store, mode); let out;
+    const q = fn(tx.objectStore(store)); if (q) q.onsuccess = () => { out = q.result; };
+    tx.oncomplete = () => res(out); tx.onerror = tx.onabort = () => rej(tx.error || new Error("storage error"));
+  }));
+}
+const MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", flac: "audio/flac", ogg: "audio/ogg" };
+const mimeOf = f => f.type || MIME[(f.name.match(/\.(\w+)$/) || [])[1]?.toLowerCase()] || "audio/mpeg";
+const fmtSize = n => n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : Math.round(n / 1e6) + " MB";
+const librarySize = () => songs.reduce((t, s) => t + (s.size || 0), 0);
+// Replace the song list, keeping the current song playing and its place in the order.
+function setSongs(list) {
+  const cur = pos >= 0 ? songs[order[pos]] : null;
+  songs = list.sort((a, b) => a.name.localeCompare(b.name));
+  buildOrder(false);
+  pos = cur ? order.indexOf(songs.indexOf(cur)) : -1;
+  renderPlayer(); if (listsOpen) renderLists();
+}
+function stopPlayback() {
+  audio.pause(); audio.removeAttribute("src"); audio.load();
+  if (audio.dataset.url) { URL.revokeObjectURL(audio.dataset.url); delete audio.dataset.url; }
+  $("tCur").textContent = "0:00"; $("tDur").textContent = "0:00"; $("seek").value = 0;
+}
+async function loadLibrary() {
+  try {
+    const recs = await idb("readonly", st => st.getAll());
+    setSongs(recs.map(r => ({ id: r.id, name: r.name, size: r.size, file: r.blob })));
+    $("musicHint").textContent = songs.length
+      ? songs.length + " songs in your library (" + fmtSize(librarySize()) + "). Tap Choose songs to add more."
+      : "Tap Choose songs to add music from Files or iCloud Drive. Songs are saved in this app, so you only add them once.";
+  } catch (e) {
+    storageOK = false;
+    $("musicHint").textContent = "Couldn't open this phone's song storage, so songs won't be saved. Pick songs each visit.";
+  }
+}
+async function removeSong(s) {
+  try { if (storageOK) await idb("readwrite", st => { st.delete(s.id); }); }
+  catch (e) { $("musicHint").textContent = "Couldn't remove “" + s.name + "”. Try again."; return; }
+  if (pos >= 0 && songs[order[pos]] === s) stopPlayback();
+  setSongs(songs.filter(x => x !== s)); showLyrics();
+  $("musicHint").textContent = "Removed “" + s.name + "” from your library. " + songs.length + " songs left.";
+}
+async function clearLibrary() {
+  try { if (storageOK) await idb("readwrite", st => { st.clear(); }); }
+  catch (e) { $("musicHint").textContent = "Couldn't clear the library. Try again."; return; }
+  stopPlayback(); setSongs([]); showLyrics();
+  $("musicHint").textContent = "Library cleared. Your original files in Files and iCloud Drive are untouched.";
+}
+function buildOrder(keepCurrent) {
+  const cur = pos >= 0 ? order[pos] : null;
+  let idx = songs.map((_, i) => i).filter(i => (!music.favOnly || isFav(songs[i])) && inActive(songs[i]));
+  if (music.shuffle) for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  order = idx;
+  pos = keepCurrent && cur != null ? order.indexOf(cur) : -1;
+}
+function playAt(p) {
+  if (!order.length) return;
+  pos = (p + order.length) % order.length;
+  const s = songs[order[pos]];
+  if (audio.dataset.url) URL.revokeObjectURL(audio.dataset.url);
+  audio.dataset.url = URL.createObjectURL(s.file);
+  audio.src = audio.dataset.url;
+  audio.play().catch(() => {});
+  renderPlayer(); showLyrics();
+}
+function renderPlayer() {
+  const cur = pos >= 0 ? songs[order[pos]] : null;
+  updateMediaSession();
+  $("npTitle").textContent = cur ? cur.name : "No song playing";
+  $("npMeta").textContent = cur ? "Song " + (pos + 1) + " of " + order.length + (music.favOnly ? " favourites" : "") + (music.active ? " in “" + music.active + "”" : "") + (isFav(cur) ? " · ★ favourite" : "")
+    : songs.length ? songs.length + " songs in your library. Press play or tap a song." : "Choose songs from your iCloud Drive or Music folder to start.";
+  $("bPlay").textContent = audio.paused ? "▶" : "❚❚";
+  $("bPlay").setAttribute("aria-label", audio.paused ? "Play" : "Pause");
+  $("bShuffle").setAttribute("aria-pressed", String(music.shuffle));
+  $("bFavOnly").setAttribute("aria-pressed", String(music.favOnly));
+  $("bFavOnly").textContent = "★ Favourites (" + music.favourites.length + ")";
+  const ol = $("playlist"); ol.replaceChildren();
+  if (!songs.length && music.favourites.length) {
+    music.favourites.slice().sort().forEach(n => { const li = el("li"); li.append(el("span", "star on", "★"), el("span", "name", n)); ol.append(li); });
+    return;
+  }
+  // Draw the list in one go, but cap it so a very large selection can't freeze the page.
+  const frag = document.createDocumentFragment();
+  songs.slice(0, 1000).forEach((s, i) => {
+    const li = el("li" , order[pos] === i ? "cur" : "");
+    const star = el("button", "star" + (isFav(s) ? " on" : ""), isFav(s) ? "★" : "☆"); star.type = "button";
+    star.setAttribute("aria-label", (isFav(s) ? "Remove from" : "Add to") + " favourites: " + s.name);
+    star.addEventListener("click", () => {
+      music.favourites = isFav(s) ? music.favourites.filter(n => n !== s.name) : [...music.favourites, s.name];
+      if (music.favOnly) buildOrder(true);
+      renderPlayer(); saveMusic().catch(() => {});
+    });
+    const name = el("button", "name song-name", s.name);
+    name.type = "button";
+    name.setAttribute("aria-label", "Play " + s.name);
+    name.addEventListener("click", () => {
+      if ((music.favOnly && !isFav(s)) || !inActive(s)) { music.favOnly = false; music.active = null; buildOrder(false); }
+      playAt(order.indexOf(i));
+    });
+    const add = el("button", "add", "＋"); add.type = "button";
+    add.setAttribute("aria-label", "Add or remove " + s.name + " from playlists");
+    add.addEventListener("click", () => openSheet(s));
+    li.append(star, name, add); frag.append(li);
+  });
+  ol.append(frag);
+  if (songs.length > 1000) ol.append(el("li", "runline", (songs.length - 1000) + " more songs are loaded and will play, but aren't listed."));
+}
+// Picked songs are added to the library (not replacing it). Same name and size counts as already added.
+let importing = false;
+async function importSongs(fileList) {
+  const files = [...fileList].filter(f => /^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(f.name));
+  if (!files.length) { $("musicHint").textContent = "No music files found there. Pick MP3 or other audio files."; return; }
+  if (importing) return;
+  importing = true;
+  if (storageOK && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  const have = new Set(songs.map(s => s.id));
+  let fresh = [], added = 0, skipped = 0, failed = 0, full = false;
+  for (let k = 0; k < files.length; k++) {
+    const f = files[k], id = f.name + "|" + f.size;
+    if (have.has(id)) { skipped++; continue; }
+    $("musicHint").textContent = "Saving songs into the app: " + (k + 1) + " of " + files.length + "… keep the app open.";
+    try {
+      // Copy the bytes; a picked File can stop being readable once the picker's access ends.
+      const blob = storageOK ? new Blob([await f.arrayBuffer()], { type: mimeOf(f) }) : f;
+      if (storageOK) await idb("readwrite", st => { st.put({ id, name: songName(f), size: f.size, blob, added: Date.now() }); });
+      have.add(id); fresh.push({ id, name: songName(f), size: f.size, file: blob }); added++;
+    } catch (e) {
+      if (e && (e.name === "QuotaExceededError" || /quota/i.test(e.message || ""))) { full = true; break; }
+      failed++;
+    }
+    if (fresh.length >= 25) { setSongs([...songs, ...fresh]); fresh = []; } // show progress in the list
+  }
+  setSongs([...songs, ...fresh]);
+  importing = false;
+  const favFound = songs.filter(isFav).length;
+  $("musicHint").textContent = (full ? "The app's storage is full. " : "") + "Added " + added + " song" + (added === 1 ? "" : "s")
+    + (skipped ? ", " + skipped + " already in your library" : "") + (failed ? ", " + failed + " couldn't be read" : "")
+    + ". Library: " + songs.length + " songs, " + fmtSize(librarySize()) + "."
+    + (!storageOK ? " (Not saved: this browser blocks song storage.)" : music.favourites.length ? " " + favFound + " of your " + music.favourites.length + " favourites are in it." : "");
+}
+$("songs").addEventListener("change", e => { const fl = [...e.target.files]; e.target.value = ""; importSongs(fl); });
+$("bPlay").addEventListener("click", () => {
+  if (!order.length) { $("songs").click(); return; }
+  if (pos < 0) playAt(0); else if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+});
+$("bNext").addEventListener("click", () => playAt(pos + 1));
+$("bPrev").addEventListener("click", () => { if (audio.currentTime > 3) audio.currentTime = 0; else playAt(pos - 1); });
+$("bShuffle").addEventListener("click", () => { music.shuffle = !music.shuffle; buildOrder(true); renderPlayer(); saveMusic().catch(() => {}); });
+$("bFavOnly").addEventListener("click", () => { music.favOnly = !music.favOnly; buildOrder(true); renderPlayer(); saveMusic().catch(() => {}); });
+function setActive(name) {
+  music.active = name; if (name) music.favOnly = false;
+  buildOrder(false); listsOpen = false; renderPlayer(); showLyrics(); showView(); saveMusic().catch(() => {});
+  if (order.length) playAt(0);
+  else $("musicHint").textContent = name && songs.length ? "None of the songs you picked are in “" + name + "”." : name ? "Tap Choose songs first, then the playlist plays its songs." : $("musicHint").textContent;
+}
+function renderLists() {
+  const box = $("lists"); box.replaceChildren();
+  const row = (label, count, isCur, onPick) => {
+    const r = el("div", "lrow" + (isCur ? " cur" : "")), n = el("span", "lname", label);
+    if (count != null) n.append(el("small", "", count + (count === 1 ? " song" : " songs")));
+    n.setAttribute("role", "button"); n.tabIndex = 0;
+    n.addEventListener("click", onPick); n.addEventListener("keydown", e => { if (e.key === "Enter") onPick(); });
+    r.append(n); box.append(r); return r;
+  };
+  row("All songs", null, !music.active && !music.favOnly, () => { music.favOnly = false; setActive(null); });
+  Object.keys(music.playlists).sort((a, b) => a.localeCompare(b)).forEach(name => {
+    const r = row(name, music.playlists[name].length, music.active === name, () => setActive(name));
+    const ren = el("button", "ghost", "Rename"); ren.type = "button";
+    ren.addEventListener("click", () => {
+      const inp = el("input"); inp.value = name; inp.maxLength = 40; inp.setAttribute("aria-label", "New name for " + name);
+      const ok = el("button", "", "Save"); ok.type = "button";
+      const save = () => {
+        const nn = inp.value.trim();
+        if (nn && nn !== name && !music.playlists[nn]) {
+          music.playlists[nn] = music.playlists[name]; delete music.playlists[name];
+          if (music.active === name) music.active = nn;
+          saveMusic().catch(() => {});
+        }
+        showView(); renderPlayer();
+      };
+      ok.addEventListener("click", save); inp.addEventListener("keydown", e => { if (e.key === "Enter") save(); });
+      r.replaceChildren(inp, ok); inp.focus();
+    });
+    const del = el("button", "danger", "Delete"); del.type = "button";
+    del.addEventListener("click", () => {
+      if (del.dataset.armed) {
+        delete music.playlists[name];
+        if (music.active === name) { music.active = null; buildOrder(true); }
+        saveMusic().catch(() => {}); showView(); renderPlayer();
+      } else { del.dataset.armed = "1"; del.textContent = "Tap to confirm"; }
+    });
+    r.append(ren, del);
+  });
+  const f = el("form", "newlist"), inp = el("input"), b = el("button", "ghost", "Create");
+  inp.placeholder = "New playlist name"; inp.maxLength = 40; inp.setAttribute("aria-label", "New playlist name"); b.type = "submit";
+  f.append(inp, b);
+  f.addEventListener("submit", e => {
+    e.preventDefault(); const n = inp.value.trim();
+    if (n && !music.playlists[n]) { music.playlists[n] = []; saveMusic().catch(() => {}); renderLists(); }
+  });
+  box.append(f, el("p", "lhint", "To add songs, close this and tap ＋ next to a song in the list."));
+  // Library: what's stored in the app, and a way to empty it.
+  const lib = el("div", "lrow"), info = el("span", "lname");
+  info.style.cursor = "default";
+  info.textContent = storageOK ? "Library: " + songs.length + " songs, " + fmtSize(librarySize()) + " saved in this app" : "Songs aren't saved in this browser";
+  lib.append(info);
+  if (storageOK && navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(est => {
+    if (est.quota && est.usage != null) info.append(el("small", "", "about " + fmtSize(Math.max(0, est.quota - est.usage)) + " more room"));
+  }).catch(() => {});
+  if (songs.length) {
+    const clr = el("button", "danger", "Clear library"); clr.type = "button";
+    clr.addEventListener("click", () => {
+      if (!clr.dataset.armed) { clr.dataset.armed = "1"; clr.textContent = "Tap to delete all " + songs.length; return; }
+      clearLibrary();
+    });
+    lib.append(clr);
+  }
+  box.append(lib);
+}
+function showView() {
+  $("bLists").setAttribute("aria-pressed", String(listsOpen));
+  $("bLists").textContent = music.active ? "▶ " + music.active : "Playlists";
+  $("lists").hidden = !listsOpen;
+  if (listsOpen) { $("playlist").hidden = true; $("lyrics").hidden = true; $("lyrSync").hidden = true; renderLists(); }
+}
+$("bLists").addEventListener("click", () => {
+  listsOpen = !listsOpen;
+  if (listsOpen && music.showLyrics) { music.showLyrics = false; saveMusic().catch(() => {}); }
+  showLyrics(); showView();
+});
+let sheetSong = null;
+function renderSheet() {
+  $("sheetTitle").textContent = "Add “" + sheetSong + "” to:";
+  const opts = $("sheetOpts"); opts.replaceChildren();
+  const names = Object.keys(music.playlists).sort((a, b) => a.localeCompare(b));
+  if (!names.length) opts.append(el("p", "lhint", "No playlists yet. Type a name below and tap Add."));
+  names.forEach(n => {
+    const has = music.playlists[n].includes(sheetSong);
+    const b = el("button", has ? "" : "ghost", (has ? "✓ " : "＋ ") + n); b.type = "button"; b.setAttribute("aria-pressed", String(has));
+    b.addEventListener("click", () => {
+      music.playlists[n] = has ? music.playlists[n].filter(x => x !== sheetSong) : [...music.playlists[n], sheetSong];
+      if (music.active === n) buildOrder(true);
+      saveMusic().catch(() => {}); renderSheet(); renderPlayer();
+    });
+    opts.append(b);
+  });
+}
+let sheetObj = null;
+function openSheet(s) {
+  sheetSong = s.name; sheetObj = s; $("sheetName").value = "";
+  const rm = $("sheetRemove"); delete rm.dataset.armed; rm.textContent = "Remove from library";
+  renderSheet(); $("sheet").hidden = false;
+}
+function closeSheet() { $("sheet").hidden = true; sheetSong = null; sheetObj = null; }
+$("sheetRemove").addEventListener("click", () => {
+  const rm = $("sheetRemove");
+  if (!rm.dataset.armed) { rm.dataset.armed = "1"; rm.textContent = "Tap again to remove “" + sheetSong + "”"; return; }
+  const s = sheetObj; closeSheet(); if (s) removeSong(s);
+});
+$("sheetDone").addEventListener("click", closeSheet);
+$("sheet").addEventListener("click", e => { if (e.target === $("sheet")) closeSheet(); });
+$("sheetNew").addEventListener("submit", e => {
+  e.preventDefault(); const n = $("sheetName").value.trim(); if (!n) return;
+  music.playlists[n] = [...new Set([...(music.playlists[n] || []), sheetSong])];
+  if (music.active === n) buildOrder(true);
+  $("sheetName").value = ""; saveMusic().catch(() => {}); renderSheet(); renderPlayer();
+});
+// iPhone and iPad ignore audio.volume (the phone's buttons set the volume), so the slider is hidden there.
+const volumeWorks = (() => { try { const a = document.createElement("audio"); a.volume = 0.5; return a.volume === 0.5; } catch (e) { return false; } })();
+function applyVolume() { if (volumeWorks) audio.volume = music.volume / 100; }
+$("vol").addEventListener("input", e => { music.volume = +e.target.value; applyVolume(); });
+$("vol").addEventListener("change", () => saveMusic().catch(() => {}));
+// Repeat: "all" loops the list, "one" repeats the current song, "off" stops after the last song.
+const REPEAT_LABEL = { all: "Repeat all", one: "Repeat 1", off: "Repeat off" };
+function showRepeat() {
+  const r = music.repeat || "all";
+  $("bRepeat").textContent = REPEAT_LABEL[r]; $("bRepeat").setAttribute("aria-pressed", String(r !== "off"));
+}
+$("bRepeat").addEventListener("click", () => {
+  music.repeat = { all: "one", one: "off", off: "all" }[music.repeat || "all"];
+  showRepeat(); saveMusic().catch(() => {});
+});
+// All listeners on the <audio> element live here, so a replacement element (see resetAudio) gets them too.
+let errRun = 0;
+function bindAudio(a) {
+  a.addEventListener("ended", () => {
+    if (music.repeat === "one") { a.currentTime = 0; a.play().catch(() => {}); return; }
+    if (music.repeat === "off" && pos >= order.length - 1) { renderPlayer(); return; }
+    playAt(pos + 1);
+  });
+  ["play", "pause"].forEach(t => a.addEventListener(t, () => { renderPlayer(); updatePosition(true); }));
+  a.addEventListener("play", () => { if (kar) kar.ctx.resume().catch(() => {}); });
+  a.addEventListener("playing", () => { errRun = 0; });
+  a.addEventListener("loadedmetadata", () => { $("tDur").textContent = fmtClock(a.duration); updatePosition(true); });
+  a.addEventListener("timeupdate", () => {
+    $("tCur").textContent = fmtClock(a.currentTime);
+    if (a.duration) $("seek").value = Math.round(a.currentTime / a.duration * 1000);
+    syncLyrics(); updatePosition(false);
+  });
+  a.addEventListener("seeked", () => { syncLyrics(); updatePosition(true); });
+  // A file that can't be played is skipped instead of stalling; stop if every song in the list fails.
+  a.addEventListener("error", () => {
+    if (a !== audio || !a.getAttribute("src")) return;
+    const cur = pos >= 0 ? songs[order[pos]] : null; errRun++;
+    const more = errRun < order.length;
+    if (cur) $("musicHint").textContent = "Couldn't play “" + cur.name + "” (the file may be damaged or in a format this phone can't play)" + (more ? ", so it was skipped." : ".");
+    if (more) playAt(pos + 1); else { errRun = 0; renderPlayer(); }
+  });
+}
+$("seek").addEventListener("input", e => { if (audio.duration) audio.currentTime = e.target.value / 1000 * audio.duration; });
+
+// Lyrics come from the MP3's own ID3 tag: USLT (plain, or with [mm:ss] times) or SYLT (synced).
+function decodeText(b, enc) {
+  const label = ["windows-1252", "utf-16", "utf-16be", "utf-8"][enc] || "utf-8";
+  return new TextDecoder(label).decode(b).replace(/\u0000+$/, "").replace(/^﻿/, "");
+}
+function strEnd(b, i, enc) { // index of the terminator starting at i
+  if (enc === 1 || enc === 2) { for (; i + 1 < b.length; i += 2) if (!b[i] && !b[i + 1]) return i; return b.length; }
+  for (; i < b.length; i++) if (!b[i]) return i; return b.length;
+}
+const unsync = b => { const o = []; for (let i = 0; i < b.length; i++) { o.push(b[i]); if (b[i] === 0xff && b[i + 1] === 0) i++; } return new Uint8Array(o); };
+const syncsafe = (b, i) => (b[i] << 21) | (b[i + 1] << 14) | (b[i + 2] << 7) | b[i + 3];
+function parseLrc(text) {
+  const lines = [];
+  text.split(/\r?\n/).forEach(l => {
+    const times = [...l.matchAll(/\[(\d+):(\d+(?:[.:]\d+)?)\]/g)];
+    if (!times.length) return;
+    const t = l.replace(/\[[^\]]*\]/g, "").trim();
+    times.forEach(m => lines.push({ t: +m[1] * 60 + parseFloat(m[2].replace(":", ".")), text: t }));
+  });
+  return lines.length ? lines.sort((a, b) => a.t - b.t) : null;
+}
+async function readLyrics(file) {
+  const head = new Uint8Array(await file.slice(0, 10).arrayBuffer());
+  if (head[0] !== 0x49 || head[1] !== 0x44 || head[2] !== 0x33) return null; // "ID3"
+  const ver = head[3], flags = head[5];
+  let b = new Uint8Array(await file.slice(10, 10 + syncsafe(head, 6)).arrayBuffer());
+  if (ver < 4 && flags & 0x80) b = unsync(b);
+  let i = 0;
+  if (flags & 0x40) i = ver === 4 ? syncsafe(b, 0) : 4 + ((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]);
+  const idLen = ver === 2 ? 3 : 4, hdr = ver === 2 ? 6 : 10;
+  let plain = null, synced = null;
+  while (i + hdr <= b.length && b[i]) {
+    const id = String.fromCharCode(...b.slice(i, i + idLen));
+    const size = ver === 2 ? (b[i + 3] << 16) | (b[i + 4] << 8) | b[i + 5]
+      : ver === 4 ? syncsafe(b, i + 4) : ((b[i + 4] << 24) | (b[i + 5] << 16) | (b[i + 6] << 8) | b[i + 7]) >>> 0;
+    if (size <= 0 || i + hdr + size > b.length) break;
+    let f = b.slice(i + hdr, i + hdr + size);
+    if (ver === 4 && b[i + 9] & 0x02) f = unsync(f);
+    if (ver === 4 && b[i + 9] & 0x01) f = f.slice(4);
+    const enc = f[0];
+    if ((id === "USLT" || id === "ULT") && !plain) {
+      let p = strEnd(f, 4, enc); p += enc === 1 || enc === 2 ? 2 : 1;
+      plain = decodeText(f.slice(p), enc).trim() || null;
+    } else if ((id === "SYLT" || id === "SLT") && !synced && f[4] === 2) { // timestamps in milliseconds
+      let p = strEnd(f, 6, enc) + (enc === 1 || enc === 2 ? 2 : 1); const lines = [];
+      while (p < f.length) {
+        const e = strEnd(f, p, enc), text = decodeText(f.slice(p, e), enc).replace(/^\n/, "");
+        p = e + (enc === 1 || enc === 2 ? 2 : 1);
+        if (p + 4 > f.length) break;
+        lines.push({ t: (((f[p] << 24) | (f[p + 1] << 16) | (f[p + 2] << 8) | f[p + 3]) >>> 0) / 1000, text: text.trim() });
+        p += 4;
+      }
+      if (lines.length) synced = lines;
+    }
+    i += hdr + size;
+  }
+  if (synced) return { synced: true, lines: synced };
+  if (!plain) return null;
+  const lrc = parseLrc(plain);
+  return lrc ? { synced: true, lines: lrc } : { synced: false, lines: plain.split(/\r?\n/).map(text => ({ text })) };
+}
+// Fallback: look the song up on LRCLIB (free, no key) by a cleaned-up file name. Found lyrics are kept on this device.
+const NOISE = /official|music\s*video|lyrics?|lyric\s*video|\bmv\b|\bm\/v\b|audio|\bhd\b|\bhq\b|4k|1080p|720p|kbps|karaoke|ktv|visuali[sz]er|官方|歌词|歌詞|动态|動態|完整版|高音质|高音質|高清|字幕|无损|無損|伴奏|純音樂|纯音乐/i;
+function cleanName(n) {
+  let t = n.replace(/[\(\[（【《「『<][^\)\]）】》」』>]*[\)\]）】》」』>]/g, m => NOISE.test(m) ? " " : " " + m.slice(1, -1) + " ");
+  t = t.replace(/\b(official\s+(music\s+)?video|official\s+mv|lyric\s+video|with\s+lyrics|lyrics|audio|mv)\b/gi, " ");
+  t = t.replace(/(动态|動態)?(歌词|歌詞)(版)?|官方(完整)?(版)?|完整版|高音质|高音質|高清|无损|無損/g, " ");
+  return t.replace(/[_|｜]+/g, " ").replace(/\s*[-–—]\s*/g, " ").replace(/\s+/g, " ").trim();
+}
+async function lrclib(q) {
+  const r = await fetch("https://lrclib.net/api/search?q=" + encodeURIComponent(q));
+  if (!r.ok) throw new Error("lrclib " + r.status);
+  return r.json();
+}
+async function lyrCacheGet(name) {
+  if (storageOK) try { const v = await idb("readonly", st => st.get(name), "lyrics"); if (v) return v; } catch (e) {}
+  try { return JSON.parse(localStorage.getItem("lyr:" + name) || "null"); } catch (e) { return null; }
+}
+function lyrCacheSet(name, v) {
+  if (storageOK) idb("readwrite", st => { st.put(v, name); }, "lyrics").catch(() => {});
+  else try { localStorage.setItem("lyr:" + name, JSON.stringify(v)); } catch (e) {}
+}
+// One-time move of lyrics cached by older versions from localStorage into IndexedDB.
+async function migrateLyrics() {
+  if (!storageOK) return;
+  const keys = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith("lyr:")) keys.push(k); } } catch (e) { return; }
+  for (const k of keys) {
+    try { const v = JSON.parse(localStorage.getItem(k)); await idb("readwrite", st => { st.put(v, k.slice(4)); }, "lyrics"); localStorage.removeItem(k); } catch (e) {}
+  }
+}
+async function onlineLyrics(s) {
+  const c = await lyrCacheGet(s.name); if (c) return c;
+  const q1 = cleanName(s.name), q2 = s.name.replace(/[\(\[（【《「『<][^\)\]）】》」』>]*[\)\]）】》」』>]/g, " ").replace(/[-–—_|]+/g, " ").replace(/\s+/g, " ").trim();
+  let res = q1 ? await lrclib(q1) : [];
+  if (!res.length && q2 && q2 !== q1) res = await lrclib(q2);
+  const q3 = (q1.match(/[\u3400-\u9fff\uf900-\ufaff]+/g) || []).join(" "); // Chinese words only, for mixed titles
+  if (!res.length && q3 && q3 !== q1) res = await lrclib(q3);
+  res = res.filter(x => !x.instrumental && (x.syncedLyrics || x.plainLyrics));
+  if (!res.length) return null;
+  // Wait for the song's length (it isn't known the instant playback starts) so the right version is picked.
+  if (!isFinite(audio.duration)) await new Promise(res => { audio.addEventListener("loadedmetadata", res, { once: true }); setTimeout(res, 4000); });
+  const d = audio.duration, near = x => isFinite(d) && x.duration && Math.abs(x.duration - d) < 12;
+  const best = res.find(x => near(x) && x.syncedLyrics) || res.find(near) || res.find(x => x.syncedLyrics) || res[0];
+  const lrc = best.syncedLyrics && parseLrc(best.syncedLyrics);
+  const out = { synced: !!lrc, lines: lrc || best.plainLyrics.split(/\r?\n/).map(text => ({ text })), source: best.artistName + " – " + best.trackName };
+  lyrCacheSet(s.name, out);
+  return out;
+}
+let lyricLine = -1;
+// Per-song timing shift in seconds: positive shows each line later (for lyrics that run ahead of the song).
+const ofsKey = s => "lyrofs:" + s.name;
+function getOfs(s) { try { return +localStorage.getItem(ofsKey(s)) || 0; } catch (e) { return 0; } }
+function showOfs(s) {
+  const o = getOfs(s);
+  $("lyrOfs").textContent = !o ? "In time" : (o > 0 ? "+" : "−") + Math.abs(o).toFixed(1) + " s";
+}
+function shiftLyrics(d) {
+  const cur = pos >= 0 ? songs[order[pos]] : null; if (!cur) return;
+  const o = Math.round((getOfs(cur) + d) * 10) / 10;
+  try { if (o) localStorage.setItem(ofsKey(cur), String(o)); else localStorage.removeItem(ofsKey(cur)); } catch (e) {}
+  showOfs(cur); lyricLine = -2; syncLyrics();
+}
+$("bLyrEarlier").addEventListener("click", () => shiftLyrics(-0.5));
+$("bLyrLater").addEventListener("click", () => shiftLyrics(0.5));
+async function showLyrics() {
+  const box = $("lyrics"), on = !!music.showLyrics;
+  $("bLyrics").setAttribute("aria-pressed", String(on));
+  box.hidden = !on || listsOpen; $("playlist").hidden = on || listsOpen; $("lyrSync").hidden = true;
+  if (!on || listsOpen) return;
+  const cur = pos >= 0 ? songs[order[pos]] : null;
+  lyricLine = -1;
+  if (!cur) { box.replaceChildren(el("p", "empty", "Play a song to see its lyrics.")); return; }
+  if (cur.lyrics === undefined) {
+    box.replaceChildren(el("p", "empty", "Looking for lyrics…"));
+    try { cur.lyrics = await readLyrics(cur.file); } catch (e) { cur.lyrics = null; }
+    if (!cur.lyrics) {
+      box.replaceChildren(el("p", "empty", "Searching online for lyrics…"));
+      try { cur.lyrics = await onlineLyrics(cur); } catch (e) { cur.lyrics = undefined; }
+    }
+    if (cur !== (pos >= 0 ? songs[order[pos]] : null) || !music.showLyrics) return; // song changed meanwhile
+  }
+  if (cur.lyrics === undefined) { box.replaceChildren(el("p", "empty", "Couldn't reach the lyrics site. Check your internet, then tap Lyrics again.")); return; }
+  if (!cur.lyrics) { box.replaceChildren(el("p", "empty", "No lyrics found for this song. Lyrics are found more often when the file name has the song title and singer.")); return; }
+  box.className = "lyrics" + (cur.lyrics.synced ? "" : " plain");
+  box.replaceChildren(...cur.lyrics.lines.map(l => el("p", "", l.text || " ")));
+  if (cur.lyrics.source) box.append(el("p", "empty", "Lyrics found online: " + cur.lyrics.source + ". If this is the wrong song, rename the file to include the title and singer."));
+  $("lyrSync").hidden = !cur.lyrics.synced; showOfs(cur);
+  box.scrollTop = 0; syncLyrics();
+}
+function syncLyrics() {
+  const cur = pos >= 0 ? songs[order[pos]] : null, box = $("lyrics");
+  if (!music.showLyrics || !cur || !cur.lyrics || !cur.lyrics.synced) return;
+  const ofs = getOfs(cur);
+  let n = -1; cur.lyrics.lines.forEach((l, k) => { if (l.t <= audio.currentTime - ofs + 0.2) n = k; });
+  if (n === lyricLine) return;
+  const ps = box.children;
+  for (const q of box.querySelectorAll("p.on")) q.classList.remove("on");
+  lyricLine = n;
+  if (ps[n]) { ps[n].classList.add("on"); box.scrollTo({ top: ps[n].offsetTop - box.offsetTop - box.clientHeight / 3, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }
+}
+$("bLyrics").addEventListener("click", () => { music.showLyrics = !music.showLyrics; listsOpen = false; showLyrics(); showView(); saveMusic().catch(() => {}); });
+// Karaoke: cancel what's mixed in the centre (usually the lead vocal) by subtracting right from left,
+// then add back some low bass, which also sits in the centre. Web Audio starts only on first use.
+let kar = null;
+function setupKaraoke() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const src = ctx.createMediaElementSource(audio);
+  const dry = ctx.createGain(), wet = ctx.createGain(); wet.gain.value = 0;
+  const split = ctx.createChannelSplitter(2), inv = ctx.createGain(), diff = ctx.createGain();
+  inv.gain.value = -1; diff.channelCount = 1; diff.channelCountMode = "explicit";
+  const bass = ctx.createBiquadFilter(); bass.type = "lowpass"; bass.frequency.value = 140;
+  const bassGain = ctx.createGain(); bassGain.gain.value = 0.8;
+  src.connect(dry).connect(ctx.destination);
+  src.connect(split); split.connect(diff, 0); split.connect(inv, 1).connect(diff);
+  diff.connect(wet); src.connect(bass).connect(bassGain).connect(wet);
+  wet.connect(ctx.destination);
+  // If iOS suspends audio (screen lock, a call), try to resume while the song should be playing.
+  ctx.onstatechange = () => { if (ctx.state !== "running" && ctx.state !== "closed" && !audio.paused) ctx.resume().catch(() => {}); };
+  return { ctx, dry, wet, on: false };
+}
+// Once the song is routed through Web Audio it can't be un-routed, and iOS may silence Web Audio when the
+// screen locks. So switching Karaoke off swaps in a fresh <audio> element that plays normally again.
+function resetAudio() {
+  const old = audio, n = document.createElement("audio");
+  n.id = "audio"; n.preload = "metadata";
+  const url = old.dataset.url, t = old.currentTime, playing = !old.paused;
+  old.pause(); old.replaceWith(n); audio = n; bindAudio(n); applyVolume();
+  if (url) {
+    n.dataset.url = url; delete old.dataset.url;
+    n.addEventListener("loadedmetadata", () => { try { n.currentTime = t; } catch (e) {} if (playing) n.play().catch(() => {}); }, { once: true });
+    n.src = url;
+  }
+  old.removeAttribute("src"); old.load();
+}
+function setKaraoke(on) {
+  if (!on) {
+    if (kar) { kar.ctx.close().catch(() => {}); kar = null; resetAudio(); }
+    $("bKaraoke").setAttribute("aria-pressed", "false"); $("bKaraoke").textContent = "Karaoke";
+    return;
+  }
+  if (!kar) { try { kar = setupKaraoke(); } catch (e) { $("musicHint").textContent = "Karaoke isn't supported in this browser."; return; } }
+  kar.on = on; kar.ctx.resume().catch(() => {});
+  const t = kar.ctx.currentTime;
+  kar.dry.gain.setTargetAtTime(on ? 0 : 1, t, 0.05);
+  kar.wet.gain.setTargetAtTime(on ? 1 : 0, t, 0.05);
+  $("bKaraoke").setAttribute("aria-pressed", String(on));
+  $("bKaraoke").textContent = on ? "Karaoke on" : "Karaoke";
+}
+$("bKaraoke").addEventListener("click", () => setKaraoke(!(kar && kar.on)));
+document.addEventListener("visibilitychange", () => { if (!document.hidden && kar) kar.ctx.resume().catch(() => {}); });
+// Lock screen, Control Centre and AirPods: song title plus play/pause, previous/next and the seek bar.
+const ms = "mediaSession" in navigator ? navigator.mediaSession : null;
+function updateMediaSession() {
+  if (!ms) return;
+  const cur = pos >= 0 ? songs[order[pos]] : null;
+  try {
+    ms.metadata = cur ? new MediaMetadata({ title: cur.name, artist: music.active || "MyMusic", album: "MyMusic",
+      artwork: [{ src: "icon-192.png", sizes: "192x192", type: "image/png" }, { src: "icon-512.png", sizes: "512x512", type: "image/png" }] }) : null;
+    ms.playbackState = !cur ? "none" : audio.paused ? "paused" : "playing";
+  } catch (e) {}
+}
+let lastPos = 0;
+function updatePosition(force) {
+  if (!ms || !ms.setPositionState || !isFinite(audio.duration) || !audio.duration) return;
+  const now = Date.now(); if (!force && now - lastPos < 5000) return; lastPos = now;
+  try { ms.setPositionState({ duration: audio.duration, position: Math.min(audio.currentTime, audio.duration), playbackRate: audio.playbackRate || 1 }); } catch (e) {}
+}
+if (ms) {
+  const h = (a, f) => { try { ms.setActionHandler(a, f); } catch (e) {} };
+  h("play", () => { if (pos < 0) { if (order.length) playAt(0); } else audio.play().catch(() => {}); });
+  h("pause", () => audio.pause());
+  h("previoustrack", () => $("bPrev").click());
+  h("nexttrack", () => $("bNext").click());
+  h("seekto", d => { if (d.seekTime != null && isFinite(audio.duration)) { audio.currentTime = Math.min(d.seekTime, audio.duration); updatePosition(true); } });
+}
+function applyMusicSettings() {
+  $("vol").value = music.volume; applyVolume();
+  if (!volumeWorks) document.querySelector(".volrow").classList.add("novol"); // phone buttons set the volume
+  showRepeat(); renderPlayer(); showLyrics(); showView();
+}
+try { const m = JSON.parse(localStorage.getItem("music") || "null"); if (m) music = Object.assign(music, m); } catch (e) {}
+bindAudio(audio);
+applyMusicSettings();
+loadLibrary().then(migrateLyrics);
+</script>
+
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
