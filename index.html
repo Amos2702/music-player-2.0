@@ -134,6 +134,11 @@ h1 { font-family: var(--display); font-weight: 600; font-size: 28px; margin: 0; 
 .sheet-opts button { text-align: left; font-size: 16px; }
 .sheet .newlist { padding: 0; }
 .pick .ghost { font-size: 15px; padding-inline: 8px; }
+.versions-box { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.72); display: flex; align-items: flex-end; justify-content: center; }
+.versions-box[hidden] { display: none; }
+.versions-inner { width: 100%; max-width: 480px; max-height: 78vh; overflow-y: auto; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border: 1px solid var(--line); border-radius: 16px 16px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.version-result { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.version-result a { color: var(--accent); font-weight: 700; }
 .playlist { flex: 1; min-height: 120px; max-height: none; }
 .playlist li { padding: 12px 4px; font-size: 16px; }
 .lyrics { flex: 1; min-height: 120px; overflow-y: auto; border-top: 1px solid var(--line); padding: 12px 4px 0; font-size: 19px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
@@ -179,6 +184,7 @@ h1 { font-family: var(--display); font-weight: 600; font-size: 28px; margin: 0; 
         <button type="button" class="ghost" id="bLists" aria-pressed="false">Playlists</button>
         <button type="button" class="ghost" id="bFavOnly" aria-pressed="false">Favourites only</button>
         <button type="button" class="ghost" id="bLyrics" aria-pressed="false">Lyrics</button>
+        <button type="button" class="ghost" id="bVersions">Other versions</button>
       </div>
       <p class="runline" id="musicHint">Loading your library…</p>
       <ol class="playlist" id="playlist"></ol>
@@ -189,6 +195,7 @@ h1 { font-family: var(--display); font-weight: 600; font-size: 28px; margin: 0; 
         <span id="lyrOfs" aria-live="polite">In time</span>
         <button type="button" class="ghost" id="bLyrLater">Lyrics later ▶</button>
       </div>
+      <div class="versions-box" id="versionsBox" hidden role="dialog" aria-modal="true" aria-labelledby="versionsTitle"><div class="versions-inner"><h2 id="versionsTitle">Other versions</h2><p class="runline" id="versionsStatus">Search for recordings by other singers. This only runs when you ask.</p><div id="versionsResults"></div><button type="button" id="versionsClose">Close</button></div></div>
       <audio id="audio" preload="metadata"></audio>
       <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet-box">
         <p class="sheet-title" id="sheetTitle"></p>
@@ -372,6 +379,55 @@ async function importSongs(fileList) {
     + (!storageOK ? " (Not saved: this browser blocks song storage.)" : music.favourites.length ? " " + favFound + " of your " + music.favourites.length + " favourites are in it." : "");
 }
 $("songs").addEventListener("change", e => { const fl = [...e.target.files]; e.target.value = ""; importSongs(fl); });
+// Other recordings are searched only on demand. Results are cached locally for 30 days.
+const VERSION_CACHE = "other-versions-v1:";
+function versionSearchTitle(filename) {
+  const stem = filename.replace(/\\.[^.]+$/, "");
+  const split = stem.indexOf("_");
+  return cleanName(split > 0 ? stem.slice(split + 1) : stem);
+}
+async function findOtherVersions() {
+  const cur = pos >= 0 ? songs[order[pos]] : null;
+  if (!cur) { $("versionsStatus").textContent = "Play or select a song first."; $("versionsResults").replaceChildren(); $("versionsBox").hidden = false; return; }
+  const title = versionSearchTitle(cur.name);
+  $("versionsTitle").textContent = "Other versions of " + title;
+  $("versionsResults").replaceChildren(); $("versionsStatus").textContent = "Checking saved results…"; $("versionsBox").hidden = false;
+  if (!title) { $("versionsStatus").textContent = "Couldn't read a song title from this filename."; return; }
+  const key = VERSION_CACHE + title.toLocaleLowerCase();
+  let data = null;
+  try {
+    const cached = JSON.parse(localStorage.getItem(key) || "null");
+    if (cached && Date.now() - cached.saved < 30 * 24 * 60 * 60 * 1000) data = cached.results;
+  } catch (e) {}
+  try {
+    if (!data) {
+      $("versionsStatus").textContent = "Searching online… playback will continue normally.";
+      const url = "https://itunes.apple.com/search?term=" + encodeURIComponent(title) + "&entity=song&limit=25";
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Search unavailable");
+      const json = await response.json();
+      const seen = new Set();
+      data = (json.results || []).filter(x => x.trackName && x.artistName && x.trackViewUrl).filter(x => {
+        const k = (x.trackName + "|" + x.artistName).toLocaleLowerCase();
+        if (seen.has(k)) return false; seen.add(k); return true;
+      }).slice(0, 15).map(x => ({ title: x.trackName, artist: x.artistName, album: x.collectionName || "", url: x.trackViewUrl }));
+      try { localStorage.setItem(key, JSON.stringify({ saved: Date.now(), results: data })); } catch (e) {}
+    }
+    $("versionsResults").replaceChildren();
+    if (!data.length) { $("versionsStatus").textContent = "No matching recordings found. Try checking the song title in the filename."; return; }
+    $("versionsStatus").textContent = "Results from Apple’s iTunes catalog. Tap a result to open it. Saved on this device for 30 days.";
+    data.forEach(item => {
+      const row = el("div", "version-result"), link = el("a", "", item.title + " — " + item.artist);
+      link.href = item.url; link.target = "_blank"; link.rel = "noopener noreferrer";
+      row.append(link);
+      if (item.album) row.append(el("span", "runline", item.album));
+      $("versionsResults").append(row);
+    });
+  } catch (e) { $("versionsStatus").textContent = "Couldn't search right now. Check your internet connection and try again."; }
+}
+$("bVersions").addEventListener("click", findOtherVersions);
+$("versionsClose").addEventListener("click", () => { $("versionsBox").hidden = true; });
+$("versionsBox").addEventListener("click", e => { if (e.target === $("versionsBox")) $("versionsBox").hidden = true; });
 $("bPlay").addEventListener("click", () => {
   if (!order.length) { $("songs").click(); return; }
   if (pos < 0) playAt(0); else if (audio.paused) audio.play().catch(() => {}); else audio.pause();
